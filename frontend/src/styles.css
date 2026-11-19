@@ -1523,3 +1523,288 @@ button.link:hover { color: var(--text); background: none; }
 .sp-nuova-skill { display: flex; flex-direction: column; gap: 6px; }
 .sp-nuova-skill textarea { min-height: 110px; }
 .memoria-tabs { margin: -4px 0 10px; }
+
+/* ===================================================== Happy: look futuristico */
+.topbar .name {
+  text-transform: none; font-weight: 800; letter-spacing: .02em;
+  background: linear-gradient(90deg, #ff8a5c, #ff5fa8 45%, #6fa8ff);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 8px rgba(255, 95, 168, .35));
+}
+.topbar .name .marchio { filter: drop-shadow(0 0 6px rgba(255, 138, 92, .6)); }
+
+/* sfondo: aurora al neon + griglia che svanisce ai bordi */
+.benvenuto {
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(111, 168, 255, .28), transparent 70%),
+    radial-gradient(55% 45% at 85% 20%, rgba(183, 146, 255, .26), transparent 70%),
+    radial-gradient(60% 55% at 50% 105%, rgba(255, 95, 168, .24), transparent 70%),
+    var(--bg);
+  background-size: 140% 140%, 140% 140%, 140% 140%, auto;
+  animation: aurora 14s ease-in-out infinite alternate;
+}
+.benvenuto::before {
+  content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    linear-gradient(rgba(111, 168, 255, .09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(111, 168, 255, .09) 1px, transparent 1px);
+  background-size: 44px 44px;
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+  mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+}
+@keyframes aurora {
+  0%   { background-position: 0% 0%, 100% 0%, 50% 100%, 0 0; }
+  100% { background-position: 30% 20%, 70% 30%, 40% 80%, 0 0; }
+}
+
+/* scheda di vetro con bordo al neon */
+.benvenuto-box {
+  position: relative; z-index: 1; width: min(520px, 92%); gap: 16px; padding: 32px 32px 26px;
+  background: linear-gradient(160deg, rgba(34, 32, 45, .72), rgba(18, 17, 25, .72));
+  -webkit-backdrop-filter: blur(18px) saturate(140%); backdrop-filter: blur(18px) saturate(140%);
+  border: 1px solid rgba(143, 160, 255, .28); border-radius: 26px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, .03) inset,
+              0 0 60px rgba(111, 168, 255, .16), 0 30px 80px rgba(0, 0, 0, .55);
+  animation: scheda-entra .7s cubic-bezier(.2, .9, .3, 1) both;
+}
+@keyframes scheda-entra { from { opacity: 0; transform: translateY(18px) scale(.97); } to { opacity: 1; transform: none; } }
+
+.benvenuto img.benvenuto-logo {
+  filter: drop-shadow(0 0 22px rgba(255, 122, 77, .65)); animation: fluttua 4s ease-in-out infinite;
+}
+@keyframes fluttua { 50% { transform: translateY(-6px); } }
+
+.benvenuto-marchio {
+  text-align: center; font-size: 54px; font-weight: 900; letter-spacing: -.03em; line-height: 1;
+  background: linear-gradient(100deg, #ff8a5c 0%, #ff5fa8 35%, #b792ff 65%, #6fa8ff 100%);
+  background-size: 200% 100%; -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 18px rgba(255, 95, 168, .4)); animation: scorri 6s linear infinite;
+}
+@keyframes scorri { to { background-position: -200% 0; } }
+.benvenuto-sigla {
+  text-align: center; font-size: 11px; font-weight: 700; letter-spacing: .5em; color: var(--sky);
+  text-shadow: 0 0 10px rgba(111, 168, 255, .7); margin-top: -8px; padding-left: .5em;
+}
+.benvenuto-titolo { text-align: center; font-size: 17px; font-weight: 600; letter-spacing: 0; color: var(--dim); }
+
+.passo {
+  background: rgba(255, 255, 255, .035); border: 1px solid rgba(143, 160, 255, .16);
+  transition: transform .2s, border-color .2s, box-shadow .2s;
+}
+.passo:hover { transform: translateY(-3px); border-color: rgba(111, 168, 255, .55); box-shadow: 0 8px 28px rgba(111, 168, 255, .18); }
+.passo b { box-shadow: 0 0 14px currentColor; }
+
+.benvenuto-azioni { justify-content: center; gap: 12px; }
+.benvenuto-azioni button {
+  height: 40px; padding: 0 22px; font-size: 13px; font-weight: 700; border-radius: 999px;
+  border: 1px solid rgba(143, 160, 255, .35); background: rgba(255, 255, 255, .04);
+  transition: transform .15s, box-shadow .2s, border-color .2s;
+}
+.benvenuto-azioni button:hover:not(:disabled) { transform: translateY(-2px); border-color: var(--sky); box-shadow: 0 0 22px rgba(111, 168, 255, .35); }
+.benvenuto-azioni button.primary {
+  border: none; color: #fff; position: relative; overflow: hidden;
+  background: linear-gradient(100deg, #ff7a4d, #ff5fa8 55%, #b792ff);
+  box-shadow: 0 0 26px rgba(255, 95, 168, .45);
+}
+.benvenuto-azioni button.primary::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 40%; left: -60%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .45), transparent);
+  transform: skewX(-20deg); animation: lampo 3.2s ease-in-out infinite;
+}
+@keyframes lampo { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+.benvenuto-azioni button.primary:hover:not(:disabled) { box-shadow: 0 0 36px rgba(255, 95, 168, .7); }
+
+.benvenuto-recenti .recente { border-radius: 12px; transition: background .15s, box-shadow .15s; }
+.benvenuto-recenti .recente:hover { background: rgba(111, 168, 255, .1); box-shadow: 0 0 0 1px rgba(111, 168, 255, .3) inset; }
+
+@media (prefers-reduced-motion: reduce) {
+  .benvenuto, .benvenuto-box, .benvenuto img.benvenuto-logo, .benvenuto-marchio,
+  .benvenuto-azioni button.primary::after { animation: none; }
+}
+@media (max-width: 560px) { .benvenuto-marchio { font-size: 42px; } }
+
+/* ============================================================================
+   HAPPY · tema futuristico per tutta l'interfaccia
+   Stesse variabili dell'app, valori nuovi: spazio profondo + neon ciano/viola/rosa.
+   ========================================================================== */
+:root {
+  --bg: #05060d;
+  --panel: #0a0c18;
+  --panel-2: #10132a;
+  --raised: #171b38;
+  --line: #242a55;
+  --line-soft: #161a38;
+
+  --text: #eaf0ff;
+  --dim: #9aa6d6;
+  --faint: #6a74a6;
+
+  --accent: #46e0ff;
+  --accent-dim: #2f7bff;
+  --accent-soft: rgba(70, 224, 255, .14);
+  --accent-ink: #021a24;
+  --sky: #5aa2ff;
+  --mint: #3dffc0;
+  --grape: #b27cff;
+  --sun: #ffd25c;
+  --neon-pink: #ff4fc3;
+  --glow: 0 0 14px rgba(70, 224, 255, .45);
+
+  --clip-video: #2a55e0;
+  --clip-audio: #0e9c86;
+  --clip-text: #8a4dff;
+  --clip-color: #d6417f;
+  --clip-html: #0f9aa8;
+
+  --r-sm: 5px; --r: 8px; --r-lg: 14px;
+}
+
+body {
+  font-family: "Exo 2", "Segoe UI Variable Text", system-ui, -apple-system, sans-serif;
+  background:
+    radial-gradient(900px 500px at 0% 0%, rgba(47, 123, 255, .14), transparent 60%),
+    radial-gradient(800px 500px at 100% 0%, rgba(178, 124, 255, .13), transparent 60%),
+    radial-gradient(900px 600px at 50% 110%, rgba(255, 79, 195, .10), transparent 60%),
+    var(--bg);
+  background-attachment: fixed;
+}
+
+/* scorrimento al neon */
+* { scrollbar-color: #2b3a78 transparent; }
+::-webkit-scrollbar-thumb { background: #28336b; background-clip: content-box; }
+::-webkit-scrollbar-thumb:hover { background: #46e0ff; background-clip: content-box; }
+
+/* comandi */
+button { transition: background .15s, border-color .15s, color .15s, box-shadow .2s, transform .12s; }
+button:hover:not(:disabled) { background: #1f2552; border-color: rgba(70, 224, 255, .55); box-shadow: 0 0 12px rgba(70, 224, 255, .22); }
+button:active:not(:disabled) { background: #141838; transform: translateY(1px); }
+button.primary {
+  background: linear-gradient(100deg, #2f7bff, #8b5cff 60%, #d24fe8); border-color: transparent; color: #fff;
+  box-shadow: 0 0 16px rgba(139, 92, 255, .4); font-weight: 700;
+}
+button.primary:hover:not(:disabled) { background: linear-gradient(100deg, #4a8dff, #9d73ff 60%, #e266f5); border-color: transparent; box-shadow: 0 0 24px rgba(139, 92, 255, .7); }
+button.ghost { background: transparent; box-shadow: none; }
+button.ghost:hover:not(:disabled) { background: rgba(70, 224, 255, .08); border-color: transparent; color: var(--accent); box-shadow: none; }
+button.icon:hover:not(:disabled) { background: rgba(70, 224, 255, .1); color: var(--accent); box-shadow: none; border-color: transparent; }
+button.on { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px rgba(70, 224, 255, .35); }
+button.on:hover:not(:disabled) { background: rgba(70, 224, 255, .22); color: var(--accent); }
+
+/* campi */
+input, select, textarea { background: #070914; border-color: var(--line); transition: border-color .15s, box-shadow .2s; }
+input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(70, 224, 255, .15), 0 0 14px rgba(70, 224, 255, .25); }
+input[type=range]:active::-webkit-slider-thumb { box-shadow: var(--glow); }
+
+/* barra in alto: vetro scuro con filo di luce */
+.topbar {
+  background: linear-gradient(180deg, rgba(14, 18, 44, .92), rgba(8, 10, 24, .92));
+  border-bottom: 1px solid rgba(70, 224, 255, .22);
+  box-shadow: 0 1px 0 rgba(139, 92, 255, .18), 0 8px 30px rgba(0, 0, 0, .45);
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.topbar .name, .benvenuto-marchio { font-family: "Orbitron", "Exo 2", sans-serif; }
+.topbar .name { font-size: 16px; letter-spacing: .12em; text-transform: uppercase;
+  background: linear-gradient(90deg, #46e0ff, #8b5cff 55%, #ff4fc3);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 0 8px rgba(70, 224, 255, .45)); }
+.topbar .name .marchio { filter: drop-shadow(0 0 7px rgba(255, 122, 77, .7)); }
+.topbar .sep { background: rgba(70, 224, 255, .18); }
+
+/* pannelli e schede */
+.panel, .side, .inspector, .tabs { background: linear-gradient(180deg, rgba(14, 17, 40, .85), rgba(8, 10, 24, .92)); }
+.tabs { border-bottom: 1px solid rgba(70, 224, 255, .16); }
+.tabs button { font-weight: 600; letter-spacing: .03em; }
+.tabs button:hover:not(:disabled) { color: var(--accent); box-shadow: none; }
+.tabs button.on { color: var(--accent); border-bottom-color: var(--accent);
+  box-shadow: none; text-shadow: 0 0 10px rgba(70, 224, 255, .7);
+  background: linear-gradient(180deg, transparent, rgba(70, 224, 255, .08)); }
+.media:hover { background: rgba(70, 224, 255, .07); }
+.media .thumb { box-shadow: 0 0 0 1px rgba(70, 224, 255, .12); }
+
+/* divisori che si accendono */
+.divider.v, .divider.h { background: rgba(70, 224, 255, .08); transition: background .15s, box-shadow .15s; }
+.divider:hover { background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+
+/* anteprima: schermo incorniciato */
+.preview { background: radial-gradient(ellipse at center, #0b0e22, #04050b); }
+.preview img, .preview video { box-shadow: 0 0 0 1px rgba(70, 224, 255, .25), 0 0 40px rgba(47, 123, 255, .25), 0 20px 60px rgba(0, 0, 0, .6); }
+
+/* trasporto e timeline */
+.transport { background: linear-gradient(180deg, #0d1130, #080a1c); border-top: 1px solid rgba(70, 224, 255, .14); border-bottom: 1px solid rgba(70, 224, 255, .14); }
+.transport .modo.on { color: var(--accent); border-color: var(--accent); box-shadow: var(--glow); }
+.timeline { background: #060813; }
+.ruler .tick { border-left-color: #222a55; }
+.track-head { background: #0a0d1e; border-color: var(--line-soft); }
+.clip { box-shadow: 0 0 0 1px rgba(255, 255, 255, .08) inset, 0 3px 12px rgba(0, 0, 0, .45); transition: box-shadow .2s, filter .2s; }
+.clip:hover { filter: brightness(1.12); box-shadow: 0 0 0 1px rgba(255, 255, 255, .25) inset, 0 0 16px rgba(70, 224, 255, .35); }
+.playhead { background: #ff4fc3; box-shadow: 0 0 10px #ff4fc3, 0 0 22px rgba(255, 79, 195, .6); }
+.playhead::before { background: #ff4fc3; box-shadow: 0 0 10px #ff4fc3; }
+
+/* assistente */
+.msg.user { background: linear-gradient(100deg, #2f7bff, #8b5cff); box-shadow: 0 0 14px rgba(139, 92, 255, .3); }
+.msg.assistant { background: rgba(23, 27, 56, .75); border-color: rgba(70, 224, 255, .2); }
+
+/* dialoghi: vetro */
+.overlay { background: rgba(2, 3, 10, .7); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.dialog {
+  background: linear-gradient(160deg, rgba(20, 24, 56, .92), rgba(8, 10, 24, .95));
+  border: 1px solid rgba(70, 224, 255, .3); border-radius: 18px;
+  box-shadow: 0 0 50px rgba(47, 123, 255, .22), 0 30px 90px rgba(0, 0, 0, .65);
+}
+.dialog h3 { font-family: "Orbitron", "Exo 2", sans-serif; letter-spacing: .08em; text-transform: uppercase; font-size: 13px; color: var(--accent); text-shadow: 0 0 10px rgba(70, 224, 255, .5); }
+.toast { background: rgba(14, 18, 44, .95); border: 1px solid rgba(70, 224, 255, .3); box-shadow: 0 0 24px rgba(47, 123, 255, .3); }
+.toast.ok { border-left-color: var(--mint); }
+.browser .item.picked { background: rgba(70, 224, 255, .13); color: var(--accent); }
+.dropzone { background: rgba(70, 224, 255, .06); border-color: var(--accent); }
+.droptarget { outline-color: var(--accent); box-shadow: inset 0 0 40px rgba(70, 224, 255, .15); }
+::selection { background: #2f7bff; color: #fff; }
+
+/* schermata iniziale: stessi colori del resto */
+.benvenuto {
+  background:
+    radial-gradient(60% 50% at 18% 12%, rgba(47, 123, 255, .30), transparent 70%),
+    radial-gradient(55% 45% at 85% 20%, rgba(139, 92, 255, .28), transparent 70%),
+    radial-gradient(60% 55% at 50% 105%, rgba(255, 79, 195, .24), transparent 70%), #05060d;
+  background-size: 140% 140%, 140% 140%, 140% 140%, auto;
+}
+.benvenuto-marchio { font-size: 46px; letter-spacing: .06em;
+  background: linear-gradient(100deg, #46e0ff 0%, #8b5cff 45%, #ff4fc3 100%); background-size: 200% 100%;
+  -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 18px rgba(70, 224, 255, .45)); }
+.benvenuto-sigla { color: var(--accent); text-shadow: 0 0 10px rgba(70, 224, 255, .8); }
+.benvenuto-azioni button.primary { background: linear-gradient(100deg, #2f7bff, #8b5cff 55%, #d24fe8); box-shadow: 0 0 26px rgba(139, 92, 255, .5); }
+.benvenuto-azioni button:hover:not(:disabled) { border-color: var(--accent); box-shadow: 0 0 22px rgba(70, 224, 255, .4); }
+.passo { border-color: rgba(70, 224, 255, .16); }
+.passo:hover { border-color: rgba(70, 224, 255, .6); box-shadow: 0 8px 28px rgba(70, 224, 255, .2); }
+.passo:nth-child(1) b { background: var(--accent); color: #021a24; }
+.passo:nth-child(2) b { background: var(--grape); color: #190a33; }
+.passo:nth-child(3) b { background: var(--neon-pink); color: #33071f; }
+@media (max-width: 560px) { .benvenuto-marchio { font-size: 34px; } }
+
+/* ============================================================================
+   Barra in alto responsive: va a capo, poi le etichette diventano icone
+   ========================================================================== */
+.topbar { flex-wrap: wrap; row-gap: 4px; min-width: 0; }
+.topbar > * { min-width: 0; }
+.topbar .spacer { flex: 1 1 8px; }
+.topbar button { flex: none; }
+.topbar .path.nome-progetto { max-width: min(24vw, 220px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* schermi medi: le azioni di montaggio restano solo icona (il titolo si legge al passaggio) */
+@media (max-width: 1500px) {
+  .topbar button.act { font-size: 0; gap: 0; width: var(--h-ctl); padding: 0; }
+  .topbar button.act .ico { margin: 0; }
+}
+/* schermi stretti: anche new / open / save / proxy / publish diventano icone */
+@media (max-width: 1100px) {
+  .topbar > button.ghost:has(> .ico) { font-size: 0; gap: 0; width: var(--h-ctl); padding: 0; }
+  .topbar .name { margin-right: 6px; letter-spacing: .08em; }
+  .topbar .path.nome-progetto { max-width: 30vw; }
+}
+/* telefono: nome ridotto al logo, tutto va a capo senza uscire dallo schermo */
+@media (max-width: 640px) {
+  .topbar { padding: 6px 8px; gap: 2px; }
+  .topbar .name { font-size: 0; margin-right: 2px; }
+  .topbar .name .marchio { width: 26px; height: 26px; }
+  .topbar .sep { display: none; }
+  .topbar .path.nome-progetto { max-width: 36vw; flex: 1 1 60px; }
+  .topbar .spacer { flex-basis: 100%; height: 0; }
+}

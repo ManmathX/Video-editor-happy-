@@ -907,7 +907,7 @@ function MenuModello({ available, setError, onCambiato, onImpostazioni }) {
 
 const LIVELLI = [
   { id: 'editor', nome: 'Only the editor',
-    desc: 'vedit tools, plus reading files, web pages and web search.' },
+    desc: 'Happy tools, plus reading files, web pages and web search.' },
   { id: 'estensioni', nome: 'Editor + my skills and MCP servers',
     desc: 'Your skills, MCP servers, plugins and Chrome. With Claude Code, safe actions run on their own and risky ones are refused.' },
   { id: 'completo', nome: 'Full access to this computer',
@@ -1184,7 +1184,7 @@ function ImparaStile({ setError, onClose, onImparato }) {
     <div className="editorstile">
       <b>Learn a style from a video</b>
       <div className="hint">
-        Give an edited video you like: vedit measures its pace, cuts on the beat, transitions,
+        Give an edited video you like: Happy measures its pace, cuts on the beat, transitions,
         zooms and punch-ins, colour and format, and turns them into a style the assistant follows.
       </div>
       <label>video link or file path
