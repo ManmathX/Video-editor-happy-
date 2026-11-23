@@ -1524,7 +1524,7 @@ button.link:hover { color: var(--text); background: none; }
 .sp-nuova-skill textarea { min-height: 110px; }
 .memoria-tabs { margin: -4px 0 10px; }
 
-/* ===================================================== Happy: look futuristico */
+/* ===================================================== Topper Mode: look futuristico */
 .topbar .name {
   text-transform: none; font-weight: 800; letter-spacing: .02em;
   background: linear-gradient(90deg, #ff8a5c, #ff5fa8 45%, #6fa8ff);

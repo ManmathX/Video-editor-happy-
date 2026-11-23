@@ -515,7 +515,7 @@ export function RenderDialog({ project, path, job, onStart, onClose, onTimeline,
           <div className="hint">
             No re-encoding: the edit (cuts, positions, dissolves) to open in another program
             with the original files, written next to the file above. Effects, colour and text
-            stay in Happy; to take them along, export to ProRes or DNxHR first.
+            stay in Topper Mode; to take them along, export to ProRes or DNxHR first.
           </div>
         </div>
       )}

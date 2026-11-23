@@ -519,7 +519,7 @@ export default function App() {
     >
       <div className="topbar">
         <span className="name"><img key={`${tab}.${leftTab}.${rightTab}.${ritorni}`}
-          src="/logo.svg" alt="" className="marchio" />Happy</span>
+          src="/logo.svg" alt="" className="marchio" />Topper Mode Custom Video Editor</span>
         <button className="ghost" onClick={() => setDialog('new')}>
           <Icon name="nuovo" />new</button>
         <button className="ghost" onClick={() => setDialog('open')}>
@@ -888,8 +888,8 @@ function Benvenuto({ recenti, onNew, onOpen, onRecent, raccolte, onRaccolta, onN
   return (
     <div className="benvenuto">
       <div className="benvenuto-box">
-        <img src="/logo.svg" alt="Happy" className="benvenuto-logo" />
-        <div className="benvenuto-marchio">Happy</div>
+        <img src="/logo.svg" alt="Topper Mode Custom Video Editor" className="benvenuto-logo" />
+        <div className="benvenuto-marchio">Topper Mode Custom Video Editor</div>
         <div className="benvenuto-sigla">AI VIDEO STUDIO</div>
         <div className="benvenuto-titolo">Hi! Let's make a video.</div>
         <div className="passi">
