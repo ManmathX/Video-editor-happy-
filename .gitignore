@@ -11,6 +11,8 @@ frontend/dist/
 backend/vedit/webui/
 # pacchetti costruiti per PyPI
 dist/
+# app desktop costruita da scripts/build_desktop.py
+dist-desktop/
 
 # ambienti virtuali
 .venv/

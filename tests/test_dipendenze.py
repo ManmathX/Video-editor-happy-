@@ -73,6 +73,7 @@ def test_si_importa_solo_cio_che_e_dichiarato():
         dichiarati |= _nomi(req)
     # nomi di distribuzione che non coincidono col modulo importato
     dichiarati |= {"multipart", "starlette", "pydantic", "PIL"}   # PIL <- pillow
+    dichiarati |= {"webview"}                                      # <- pywebview (extra desktop)
     # torch non e' una dipendenza e non deve diventarlo: analyze lo prova solo
     # per sapere se c'e' una GPU per whisper, e senza ripiega su cpu.
     dichiarati |= {"torch"}

@@ -217,6 +217,12 @@ def cmd_ui(a) -> int:
     return 0
 
 
+def cmd_desktop(a) -> int:
+    from .desktop import apri
+
+    return apri(port=a.port, project=a.project, collega=a.connect_claude)
+
+
 def cmd_skill(a) -> int:
     """Skill di montaggio in ~/.vedit/skills: elenco, aggiunta, nuova, rimozione."""
     from . import estensioni
@@ -391,6 +397,13 @@ def build_parser() -> argparse.ArgumentParser:
     u.add_argument("--project", help="progetto da aprire all'avvio")
     u.add_argument("--no-browser", action="store_true")
     u.set_defaults(func=cmd_ui)
+
+    dk = sub.add_parser("desktop", help="avvia l'editor in una finestra sua (extra desktop)")
+    dk.add_argument("--port", type=int, default=8760)
+    dk.add_argument("--project", help="progetto da aprire all'avvio")
+    dk.add_argument("--connect-claude", action="store_true",
+                    help="registra questo editor in Claude Code (MCP su HTTP)")
+    dk.set_defaults(func=cmd_desktop)
 
     fi = sub.add_parser("install-ffmpeg",
                         help="scarica ffmpeg/ffprobe nella cache di vedit (niente amministratore)")

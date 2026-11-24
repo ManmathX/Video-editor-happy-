@@ -302,6 +302,44 @@ i video restano dove sono, non vengono copiati.
 Un progetto nuovo parte con **una traccia video e una audio**. Ne aggiungi quante ne vuoi,
 quando ti servono (vedi [Timeline e tracce](#4-timeline-e-tracce-in-basso)).
 
+### App desktop (Windows e macOS)
+
+Lo stesso editor in una finestra sua, con Python e tutti gli extra dentro — sul computer che
+la usa non servono Python, Node né `pip`. Se ffmpeg manca lo scarica al primo avvio.
+
+- **Windows**: `Topper Mode Video Editor Setup <versione>.exe` (menu Start e collegamento
+  sul desktop), oppure lo zip portatile.
+- **macOS** (Apple Silicon): `Topper Mode Video Editor.app`. Non è firmata: la prima volta,
+  clic destro → *Apri*.
+
+La costruisce `.github/workflows/desktop.yml` (Actions → *desktop* → *Run workflow*, e a ogni
+tag `v*`), che prova anche l'app impacchettata. Per costruirla sulla tua macchina — ogni
+sistema costruisce la sua:
+
+```bash
+pip install -e ".[chat,desktop,transcribe,html,web,plugin]" pyinstaller
+python scripts/build_desktop.py               # --installer su Windows per il setup .exe
+python scripts/build_desktop.py --prova       # avvia l'app costruita, controlla UI e MCP
+```
+
+Da un clone, `pip install -e ".[desktop]"` e `vedit desktop` aprono la finestra senza
+impacchettare niente.
+
+**Claude Code e l'app desktop.** L'assistente dentro l'app usa Claude Code se è installato.
+Per le tue sessioni di Claude Code l'app propone al primo avvio (e dal menu *Claude Code*) di
+eseguire `claude mcp add --scope user --transport http vedit-live http://127.0.0.1:8760/mcp/`:
+da lì ogni sessione lavora sul progetto aperto nella finestra, dal vivo. Se è Claude Code ad
+avviare l'editor, nell'app c'è anche il server su stdio:
+
+```bash
+claude mcp add vedit -- "C:\Program Files\Topper Mode Video Editor\vedit.exe" mcp            # Windows
+claude mcp add vedit -- "/Applications/Topper Mode Video Editor.app/Contents/MacOS/vedit" mcp  # macOS
+```
+
+`open_ui` apre allora la finestra invece di una scheda del browser. Un progetto alla volta
+per file: aprire l'app mentre un editor gira già sulla porta mostra quello invece di
+avviarne un secondo.
+
 ---
 
 ## L'interfaccia, pannello per pannello

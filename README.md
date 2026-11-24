@@ -234,6 +234,45 @@ pip install -e ".[web]"         # yt-dlp — web_download from video pages (YouT
 `numpy` and Pillow are **not** extras: footage analysis, music-timed editing, `preview_grid`
 and `color_scopes` stand on them, and looking at your edit is rule number one.
 
+### Desktop app (Windows and macOS)
+
+The same editor in a window of its own, with Python and every extra inside — no Python, Node
+or `pip` on the computer that runs it. ffmpeg is downloaded on first launch if missing.
+
+- **Windows**: `Topper Mode Video Editor Setup <version>.exe` (Start menu and desktop
+  shortcut), or the portable zip.
+- **macOS** (Apple Silicon): `Topper Mode Video Editor.app`. Not signed: the first time,
+  right-click → *Open*.
+
+Built by `.github/workflows/desktop.yml` (Actions → *desktop* → *Run workflow*, and on every
+`v*` tag), which also tests the packaged app. To build on your own machine — each system
+builds its own app:
+
+```bash
+pip install -e ".[chat,desktop,transcribe,html,web,plugin]" pyinstaller
+python scripts/build_desktop.py               # --installer on Windows for the setup .exe
+python scripts/build_desktop.py --prova       # starts the built app, checks UI and MCP
+```
+
+From a clone, `pip install -e ".[desktop]"` and `vedit desktop` open the window without
+packaging anything.
+
+**Claude Code and the desktop app.** The assistant inside the app uses Claude Code if it is
+installed. For your own Claude Code sessions, the app offers on first launch (and from its
+*Claude Code* menu) to run
+`claude mcp add --scope user --transport http vedit-live http://127.0.0.1:8760/mcp/`: every
+session then edits the project open in the window, live. If Claude Code starts the editor
+itself, the app ships the stdio server too:
+
+```bash
+claude mcp add vedit -- "C:\Program Files\Topper Mode Video Editor\vedit.exe" mcp            # Windows
+claude mcp add vedit -- "/Applications/Topper Mode Video Editor.app/Contents/MacOS/vedit" mcp  # macOS
+```
+
+`open_ui` then opens the desktop window instead of a browser tab. One editor per project
+file: opening the app while an editor already runs on the port shows that one rather than
+starting a second.
+
 ---
 
 ## Quick start

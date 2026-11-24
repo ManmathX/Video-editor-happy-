@@ -74,6 +74,10 @@ html = ["playwright>=1.40"]
 # scaricare dalle pagine dei video (YouTube, Vimeo, social...) con web_download.
 # Senza, web_download scarica i file diretti e dice come installarlo.
 web = ["yt-dlp[default]>=2026.10.26"]
+# l'editor in una finestra sua (`vedit desktop` e l'app di scripts/build_desktop.py):
+# usa la webview del sistema, niente Chromium da portarsi dietro. Senza, `vedit ui`
+# resta identico nel browser.
+desktop = ["pywebview>=5.0"]
 # plugin audio esterni (VST3, AU su Mac): pedalboard li carica, ffmpeg no.
 # Senza, l'effetto "vst" dice cosa installare e il resto non cambia.
 plugin = ["pedalboard>=0.9"]

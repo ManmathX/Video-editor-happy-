@@ -129,6 +129,8 @@ backend/vedit/
   mcp_server.py  strumenti MCP
   api.py         API REST/WebSocket per la UI
   cli.py         riga di comando
+  desktop.py     l'editor in una finestra sua (pywebview) e l'app impacchettata
+                 (desktop/, scripts/build_desktop.py, .github/workflows/desktop.yml)
 frontend/src/    interfaccia web (React + Vite)
 tests/           test, inclusi render reali di ogni effetto
 ```
@@ -362,6 +364,15 @@ collega li' lavora sul progetto aperto nel browser: senza `project` gli strument
 il progetto, ed e' il modo giusto anche per un agente esterno quando l'utente ha gia' l'editor
 aperto: `claude mcp add --transport http vedit-live http://127.0.0.1:8760/mcp/`.
 
+L'app desktop (`desktop.py`) e' lo stesso server in una finestra pywebview, e lo registra lei
+in Claude Code (scope user) se l'utente accetta al primo avvio o dal menu *Claude Code*.
+Dentro l'app `open_ui` porta la finestra davanti e `close_ui` non ferma niente (la finestra
+e' dell'utente); se sulla porta risponde gia' un editor la finestra si apre su quello, mai un
+secondo Store. Nell'app impacchettata `sys.executable` e' l'app: `desktop.come_interprete`
+esegue `-c`/`-m` come python, perche' trascrizione e yt-dlp partono cosi'. La CLI viaggia
+nell'app come eseguibile `vedit` (`vedit mcp` su stdio); li' `open_ui` apre la finestra
+invece del browser. `python scripts/build_desktop.py --prova` verifica l'app costruita.
+
 ### Segnalare cio' che non va
 
 `report_issue` (`segnalazioni.py`) aggiunge una voce a `SEGNALAZIONI.md` — alla radice della
@@ -575,8 +586,8 @@ l'ultimo che salva vince, non c'è un lock. Con `open_ui` il problema non si pon
   — quest'ultimo non è facoltativo: senza, restano fuori `music_beats`, `plan_edit`,
   `inspect_footage`, `match_color` e `check_cuts`, cioè scelta del materiale e montaggio a
   tempo. Stessa cosa per Pillow: `preview_grid` e `color_scopes` ci stanno sopra, e guardare
-  il montaggio è la regola prima. Gli extra veri sono sei: `chat` (`anthropic`, l'assistente
-  nella UI), `vision` (`ultralytics`, riconoscimento del soggetto — si tira dietro torch),
+  il montaggio è la regola prima. Gli extra veri sono sette: `chat` (`anthropic`, l'assistente
+  nella UI), `desktop` (`pywebview`, l'editor in una finestra sua invece che nel browser), `vision` (`ultralytics`, riconoscimento del soggetto — si tira dietro torch),
   `transcribe` (`faster-whisper`, sottotitoli e pulizia del parlato), `html` (`playwright`,
   render delle clip html — usa Chrome o Edge gia' installati), `plugin` (`pedalboard`,
   plugin audio VST3/AU) e `web` (`yt-dlp`, scaricare dalle pagine dei video). Senza gli extra il resto
