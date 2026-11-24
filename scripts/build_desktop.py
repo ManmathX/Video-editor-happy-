@@ -120,80 +120,158 @@ def _richiesta_mcp() -> bytes:
         "clientInfo": {"name": "build-desktop", "version": "0"}}}).encode()
 
 
+def _coda(testo: str | bytes, n: int = 3000) -> str:
+    if isinstance(testo, bytes):
+        testo = testo.decode("utf-8", "replace")
+    return testo if len(testo) <= n else "…" + testo[-n:]
+
+
+def _segnala(titolo: str, dettaglio: str) -> None:
+    """Su GitHub Actions l'errore diventa un'annotazione: si legge dalla pagina
+    dell'esecuzione senza scaricare i log (che vogliono l'accesso)."""
+    print(f"  FAIL {titolo}\n{dettaglio}", flush=True)
+    if os.environ.get("GITHUB_ACTIONS"):
+        testo = dettaglio.replace("%", "%25").replace("\r", "").replace("\n", "%0A")
+        print(f"::error title={titolo}::{testo}", flush=True)
+
+
 def prova() -> None:
+    """Ogni controllo gira anche se uno prima fallisce: una sola costruzione dice tutto."""
     cli = cli_app()
     if not cli.is_file():
         raise SystemExit(f"{cli} not found: build first")
     print(f"testing {cli}", flush=True)
+    falliti: list[str] = []
 
-    if MAC:
-        info = plistlib.loads((cli.parents[1] / "Info.plist").read_bytes())
-        assert info["CFBundleExecutable"] == NOME, info["CFBundleExecutable"]
-        _ok(f"the .app opens the window ({info['CFBundleExecutable']})")
+    def controllo(titolo: str):
+        def deco(f):
+            try:
+                esito = f()
+                _ok(titolo + (f" ({esito})" if esito else ""))
+            except Exception as e:  # noqa: BLE001 - raccolto e riportato
+                falliti.append(titolo)
+                _segnala(titolo, _coda(f"{type(e).__name__}: {e}"))
+            return f
+        return deco
 
     def py(codice: str) -> str:
         p = subprocess.run([str(cli), "-c", codice], capture_output=True, text=True, timeout=300)
-        assert p.returncode == 0, f"{codice}\n{p.stdout}\n{p.stderr}"
+        if p.returncode != 0:
+            raise RuntimeError(f"exit {p.returncode}\n{_coda(p.stdout, 1000)}\n{_coda(p.stderr)}")
         return p.stdout.strip()
 
+    if MAC:
+        @controllo("the .app opens the window")
+        def _():
+            info = plistlib.loads((cli.parents[1] / "Info.plist").read_bytes())
+            if info["CFBundleExecutable"] != NOME:
+                raise RuntimeError(f"CFBundleExecutable is {info['CFBundleExecutable']!r}")
+            return info["CFBundleExecutable"]
+
     # la stessa via dei lavori figli (trascrizione): sys.executable -c ...
-    py("import vedit.api, vedit.mcp_server, vedit.desktop, numpy, PIL, webview")
-    _ok("core modules and the -c child-process path")
-    presenti = [m for m in EXTRA if importlib.util.find_spec(m.split(".")[0]) is not None]
-    if presenti:
-        py("import importlib\nfor m in %r: importlib.import_module(m)" % presenti)
-        _ok("extras: " + ", ".join(presenti))
-    if "yt_dlp" in presenti:
-        p = subprocess.run([str(cli), "-m", "yt_dlp", "--version"], capture_output=True,
-                           text=True, timeout=120)
-        assert p.returncode == 0 and p.stdout.strip(), p.stderr
-        _ok(f"yt-dlp via -m ({p.stdout.strip()})")
+    @controllo("core modules through the -c child-process path")
+    def _():
+        py("import vedit.api, vedit.mcp_server, vedit.desktop, numpy, PIL, webview")
+
+    for modulo in EXTRA:
+        if importlib.util.find_spec(modulo.split(".")[0]) is None:
+            continue
+
+        @controllo(f"extra {modulo}")
+        def _(modulo=modulo):
+            py(f"import {modulo}")
+
+    if importlib.util.find_spec("yt_dlp") is not None:
+        @controllo("yt-dlp via -m")
+        def _():
+            p = subprocess.run([str(cli), "-m", "yt_dlp", "--version"], capture_output=True,
+                               text=True, timeout=120)
+            if p.returncode != 0 or not p.stdout.strip():
+                raise RuntimeError(f"exit {p.returncode}\n{_coda(p.stderr)}")
+            return p.stdout.strip()
+
+    # senza ffmpeg /api/state risponde 500: l'app lo scarica al primo avvio, qui
+    # si fa lo stesso con la CLI dell'app (sulle macchine di CI non c'e')
+    @controllo("ffmpeg found or downloaded by the app (what the first launch does)")
+    def _():
+        trova = "from vedit import ffmpeg; print(ffmpeg.binary('ffmpeg'), ffmpeg.binary('ffprobe'))"
+        try:
+            return py(trova)
+        except RuntimeError:
+            p = subprocess.run([str(cli), "install-ffmpeg"], capture_output=True, text=True,
+                               timeout=900)
+            if p.returncode != 0:
+                raise RuntimeError(f"install-ffmpeg exit {p.returncode}\n{_coda(p.stdout, 1000)}"
+                                   f"\n{_coda(p.stderr)}") from None
+            # scaricato non basta: deve anche partire su questa macchina
+            return "downloaded: " + py(trova + "; import subprocess; subprocess.run("
+                                       "[ffmpeg.binary('ffmpeg'), '-version'], check=True, "
+                                       "capture_output=True)")
 
     # interfaccia e MCP su HTTP, come li usa la finestra e Claude Code
-    porta = 8799
-    server = subprocess.Popen([str(cli), "ui", "--no-browser", "--port", str(porta)],
-                              stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
-    base = f"http://127.0.0.1:{porta}"
-    diretto = urllib.request.build_opener(urllib.request.ProxyHandler({}))
-    try:
-        scadenza = time.time() + 120
-        while True:
-            try:
-                stato = json.loads(diretto.open(f"{base}/api/state", timeout=2).read())
-                break
-            except OSError:
-                if server.poll() is not None or time.time() > scadenza:
-                    raise SystemExit("the packaged server did not start:\n"
-                                     + (server.stdout.read() if server.poll() is not None else ""))
-                time.sleep(1)
-        assert "effects" in stato
-        pagina = diretto.open(base + "/", timeout=10).read().decode()
-        assert '<div id="root">' in pagina, pagina[:300]
-        _ok("server, /api/state and the compiled interface")
-        req = urllib.request.Request(f"{base}/mcp/", data=_richiesta_mcp(), method="POST", headers={
-            "Content-Type": "application/json", "Accept": "application/json, text/event-stream"})
-        corpo = diretto.open(req, timeout=30).read().decode()
-        assert "serverInfo" in corpo, corpo[:300]
-        _ok("MCP over HTTP (/mcp/, what the window and Claude Code use)")
-    finally:
-        server.terminate()
+    @controllo("server, interface and MCP over HTTP (what the window and Claude Code use)")
+    def _():
+        import tempfile
+        import urllib.error
+
+        porta = 8799
+        log = Path(tempfile.mkstemp(prefix="vedit-ui-", suffix=".log")[1])
+        with open(log, "w") as out:
+            server = subprocess.Popen([str(cli), "ui", "--no-browser", "--port", str(porta)],
+                                      stdout=out, stderr=subprocess.STDOUT)
+        base = f"http://127.0.0.1:{porta}"
+        diretto = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
-            server.wait(timeout=15)
-        except subprocess.TimeoutExpired:
-            server.kill()
+            scadenza = time.time() + 120
+            while True:
+                try:
+                    stato = json.loads(diretto.open(f"{base}/api/state", timeout=5).read())
+                    break
+                except urllib.error.HTTPError as e:
+                    # il server c'e' e ha risposto con un errore: aspettare non serve
+                    raise RuntimeError(f"/api/state answered {e.code}: {_coda(e.read(), 500)}\n"
+                                       + _coda(log.read_text(errors="replace"))) from None
+                except OSError:
+                    if server.poll() is not None or time.time() > scadenza:
+                        raise RuntimeError(f"the server did not start (exit {server.poll()}):\n"
+                                           + _coda(log.read_text(errors="replace")))
+                    time.sleep(1)
+            if "effects" not in stato:
+                raise RuntimeError(f"/api/state: {_coda(json.dumps(stato), 500)}")
+            pagina = diretto.open(base + "/", timeout=10).read().decode()
+            if '<div id="root">' not in pagina:
+                raise RuntimeError(f"interface not served: {pagina[:300]}")
+            req = urllib.request.Request(f"{base}/mcp/", data=_richiesta_mcp(), method="POST",
+                                         headers={"Content-Type": "application/json",
+                                                  "Accept": "application/json, text/event-stream"})
+            corpo = diretto.open(req, timeout=30).read().decode()
+            if "serverInfo" not in corpo:
+                raise RuntimeError(f"MCP initialize: {corpo[:300]}")
+        finally:
+            server.terminate()
+            try:
+                server.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                server.kill()
 
     # MCP su stdio: `claude mcp add vedit -- <app>/vedit mcp`
-    mcp = subprocess.Popen([str(cli), "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                           stderr=subprocess.PIPE)
-    risposta: list[bytes] = []
-    lettore = threading.Thread(target=lambda: risposta.append(mcp.stdout.readline()), daemon=True)
-    lettore.start()
-    mcp.stdin.write(_richiesta_mcp() + b"\n")
-    mcp.stdin.flush()
-    lettore.join(timeout=120)
-    mcp.kill()
-    assert risposta and b"serverInfo" in risposta[0], (risposta, mcp.stderr.read()[-2000:])
-    _ok("MCP over stdio (`vedit mcp`)")
+    @controllo("MCP over stdio (`vedit mcp`)")
+    def _():
+        mcp = subprocess.Popen([str(cli), "mcp"], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        risposta: list[bytes] = []
+        lettore = threading.Thread(target=lambda: risposta.append(mcp.stdout.readline()),
+                                   daemon=True)
+        lettore.start()
+        mcp.stdin.write(_richiesta_mcp() + b"\n")
+        mcp.stdin.flush()
+        lettore.join(timeout=120)
+        mcp.kill()
+        if not risposta or b"serverInfo" not in risposta[0]:
+            raise RuntimeError(f"reply {risposta[:1]!r}\n{_coda(mcp.stderr.read())}")
+
+    if falliti:
+        raise SystemExit(f"packaged app: {len(falliti)} check(s) failed: {', '.join(falliti)}")
     print("packaged app OK", flush=True)
 
 
