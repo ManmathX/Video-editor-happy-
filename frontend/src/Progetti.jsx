@@ -122,6 +122,64 @@ function SpostaProgetto({ path, nome, raccolte, onClose, onSposta }) {
 
 const quando = (t) => new Date(t * 1000).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })
 
+/**
+ * Tutti i progetti, non solo i 12 della prima schermata: quelli aperti o creati
+ * e quelli che il server trova nella cartella Video e nelle raccolte. Quelli il
+ * cui file non c'e' piu' restano, segnati, finche' non si tolgono.
+ * ``menu`` disegna il menu di un progetto (rinomina, sposta, elimina).
+ */
+export function TuttiIProgetti({ onClose, onApri, setError, menu, giro = 0 }) {
+  const [voci, setVoci] = useState(null)
+  const [cerca, setCerca] = useState('')
+  // ``giro`` cambia quando un progetto e' stato rinominato, spostato o eliminato dal suo menu
+  useEffect(() => {
+    api.tuttiProgetti().then((r) => setVoci(r.progetti)).catch((e) => setError(e.message))
+  }, [setError, giro])
+
+  const q = cerca.trim().toLowerCase()
+  const visti = (voci || []).filter((v) => !q
+    || [v.name, v.path, v.raccolta].some((x) => (x || '').toLowerCase().includes(q)))
+  const mancanti = (voci || []).filter((v) => !v.esiste).length
+
+  return (
+    <Modal title="All projects" onClose={onClose} wide
+      actions={<><span className="spacer" /><button onClick={onClose}>close</button></>}>
+      <input type="search" value={cerca} onChange={(e) => setCerca(e.target.value)}
+        placeholder="search by name, folder or collection" aria-label="search projects"
+        style={{ width: '100%', marginBottom: 8 }} />
+      <div className="hint" style={{ marginBottom: 6 }}>
+        {voci === null ? 'looking for your projects…'
+          : `${voci.length} project${voci.length === 1 ? '' : 's'}, last opened first`
+            + (mancanti ? ` · ${mancanti} not found where they were` : '')}
+      </div>
+      <div className="cestino-elenco tutti-progetti">
+        {visti.map((v) => (
+          <div key={v.path} className={`cestino-voce ${v.esiste ? '' : 'mancante'}`}>
+            <button className="ghost apri-progetto" disabled={!v.esiste} title={v.path}
+              onClick={() => onApri(v.path)}>
+              <Icon name="video" size={14} />
+              <span className="nome">{v.name}</span>
+              <span className="hint">
+                {[v.esiste ? null : 'file not found', v.raccolta, quando(v.quando)]
+                  .filter(Boolean).join(' · ')}
+              </span>
+            </button>
+            {v.esiste ? menu?.(v) : (
+              <button className="ghost" title="Remove it from this list (nothing on disk is touched)"
+                onClick={() => api.dimenticaProgetto(v.path).then((r) => setVoci(r.progetti))
+                  .catch((e) => setError(e.message))}>
+                forget</button>
+            )}
+          </div>
+        ))}
+        {voci && !visti.length && (
+          <div className="hint">{q ? 'No project matches.' : 'No projects yet.'}</div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 /** I progetti eliminati: si ripristinano dov'erano, o si cancellano per sempre. */
 export function Cestino({ onClose, onFatto, setError, flash }) {
   const [voci, setVoci] = useState(null)

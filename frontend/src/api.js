@@ -32,6 +32,12 @@ export const api = {
   // solo progetto, percorso e revisione: si chiede a ogni evento "project"
   project: () => req('/api/project'),
   recenti: () => req('/api/recenti'),
+  // tutti i progetti, non solo gli ultimi 12: { progetti: [{ path, name, quando, esiste, raccolta }] }
+  tuttiProgetti: () => req('/api/progetti/tutti'),
+  // toglie dall'elenco un progetto il cui file non c'e' piu'
+  dimenticaProgetto: (path) => req('/api/progetti/dimentica', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ path }),
+  }),
 
   // i file dei progetti (progetti.py): duplicare, rinominare, spostare, eliminare nel cestino
   chiudiProgetto: () => req('/api/project/close', { method: 'POST' }),
@@ -191,9 +197,21 @@ export const api = {
       body: JSON.stringify({ preset_id, clip_id }),
     }),
 
+  // una chat nuova: quella di prima va nell'archivio del progetto, non si perde
   chatReset: () => req('/api/chat/reset', { method: 'POST' }),
   // la conversazione del progetto aperto: si salva accanto al progetto
   chatStoria: () => req('/api/chat/storia'),
+  // le chat passate del progetto: { attuale, chat: [{ id, titolo, turni, aggiornata }] }
+  chatArchivio: () => req('/api/chat/archivio'),
+  chatRiprendi: (id) => req('/api/chat/riprendi', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+  }),
+  chatRinomina: (id, titolo) => req('/api/chat/rinomina', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, titolo }),
+  }),
+  chatElimina: (id) => req('/api/chat/elimina', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id }),
+  }),
   // modello e sforzo del motore attivo, senza perdere la conversazione
   llmRapido: (body) =>
     req('/api/llm/rapido', {

@@ -18,11 +18,17 @@ on:
         default: false
   push:
     tags: ["v*"]
-    # e a ogni modifica dell'app desktop, su qualunque ramo: l'impacchettamento si
-    # rompe senza che i test della suite se ne accorgano (sui tag i path non contano)
+    # e a ogni modifica dell'app, su qualunque ramo: l'app scaricabile resta quella
+    # del codice, e l'impacchettamento si rompe senza che la suite se ne accorga
+    # (sui tag i path non contano)
     branches: ["**"]
     paths:
-      - "backend/vedit/desktop.py"
+      - "backend/**"
+      - "frontend/src/**"
+      - "frontend/public/**"
+      - "frontend/index.html"
+      - "frontend/package*.json"
+      - "pyproject.toml"
       - "desktop/**"
       - "scripts/build_desktop.py"
       - ".github/workflows/desktop.yml"

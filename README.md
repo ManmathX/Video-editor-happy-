@@ -234,6 +234,14 @@ pip install -e ".[web]"         # yt-dlp — web_download from video pages (YouT
 `numpy` and Pillow are **not** extras: footage analysis, music-timed editing, `preview_grid`
 and `color_scopes` stand on them, and looking at your edit is rule number one.
 
+### All your projects
+
+The start screen shows the last 12 projects; **all projects** (also in *open…*) lists every
+project you have ever opened or created, newest first, with search by name, folder or
+collection. It also picks up projects sitting in your Videos folder and in your collections
+that were never opened from here. A project whose file was moved or deleted outside the
+editor stays in the list, struck through, until you *forget* it — nothing on disk is touched.
+
 ### Desktop app (Windows and macOS)
 
 The same editor in a window of its own, with Python and every extra inside — no Python, Node
@@ -701,10 +709,14 @@ a script written for the voice, the pace asked to the voice engine (never a sped
 track), one animated scene per chapter with visual metaphors instead of text cards, and
 several rounds of frame checks.
 
-**One conversation per project** — the chat is saved next to the project
+**Chats are kept, per project** — the chat is saved next to the project
 (`<project>.chat.json`) and comes back when you reopen it: with Claude Code the session
 resumes, with API models the history is reloaded, and if the model changed the
-conversation is handed over as text. The trash button starts it over.
+conversation is handed over as text. **New chat** (or `/clear`) doesn't delete it: it goes
+to the project's chat history (`<project>.chat-archivio.json`, the clock button or
+`/chats`), where you reopen it exactly where you left off — Claude Code session included —
+rename it, or delete it for good. The last 100 chats of each project are kept; they move,
+get renamed and go to the trash with the project.
 
 **Publishing** — the *publish* button (or `publish_video`) uploads an exported file to
 **YouTube** (your own OAuth client, sign in once in the browser; uploads start **private**

@@ -302,6 +302,15 @@ i video restano dove sono, non vengono copiati.
 Un progetto nuovo parte con **una traccia video e una audio**. Ne aggiungi quante ne vuoi,
 quando ti servono (vedi [Timeline e tracce](#4-timeline-e-tracce-in-basso)).
 
+### Tutti i tuoi progetti
+
+La prima schermata mostra gli ultimi 12 progetti; **all projects** (anche in *open…*) elenca
+tutti quelli che hai aperto o creato, dal più recente, con la ricerca per nome, cartella o
+raccolta. Trova anche i progetti che stanno nella cartella Video e nelle raccolte senza
+essere mai stati aperti da qui. Un progetto il cui file è stato spostato o cancellato fuori
+dall'editor resta nell'elenco, barrato, finché non lo togli con *forget* — sul disco non si
+tocca niente.
+
 ### App desktop (Windows e macOS)
 
 Lo stesso editor in una finestra sua, con Python e tutti gli extra dentro — sul computer che
@@ -460,7 +469,8 @@ Chiedi una modifica in italiano e viene fatta sul progetto:
 
 Gli strumenti che usa **sono le stesse operazioni dei pulsanti**: quello che fa compare in
 timeline e lo annulli con Ctrl+Z, esattamente come una tua modifica. Sotto ogni risposta
-vedi la lista di cosa ha toccato. Il cestino ricomincia la conversazione.
+vedi la lista di cosa ha toccato. **Nuova chat** ne apre un'altra senza perdere quella di
+prima, che resta nella cronologia delle chat del progetto (il pulsante con l'orologio).
 
 **Scegli il modello** dalla pastiglia in alto nella scheda, senza variabili d'ambiente e
 senza riavviare:
@@ -721,10 +731,14 @@ scritto per la voce, il ritmo chiesto al motore della voce (mai una traccia acce
 scena animata per capitolo con metafore visive invece di cartelli di testo, e piu' giri di
 controllo sui fotogrammi.
 
-**Una conversazione per progetto** — la chat si salva accanto al progetto
+**Le chat restano, per progetto** — la chat si salva accanto al progetto
 (`<progetto>.chat.json`) e torna quando lo riapri: con Claude Code riprende la sessione, con
 i modelli via API ricarica la cronologia, e se nel frattempo hai cambiato modello gli passa
-la conversazione come testo. Il cestino la fa ricominciare.
+la conversazione come testo. **Nuova chat** (o `/clear`) non la cancella: va nella cronologia
+delle chat del progetto (`<progetto>.chat-archivio.json`, il pulsante con l'orologio o
+`/chats`), da dove la riapri esattamente dove l'avevi lasciata — sessione di Claude Code
+compresa — la rinomini o la elimini per sempre. Per ogni progetto restano le ultime 100;
+si spostano, cambiano nome e vanno nel cestino insieme al progetto.
 
 **Pubblicare** — il pulsante *publish* (o `publish_video`) carica un video esportato su
 **YouTube** (un tuo client OAuth, accesso una volta nel browser; il caricamento parte

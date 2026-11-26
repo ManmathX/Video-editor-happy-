@@ -243,7 +243,8 @@ export function formatoDi(w, h) {
 
 // comandi della chat che fa l'editor da se': non arrivano al modello
 const COMANDI = [
-  { name: 'clear', description: 'Start the conversation over' },
+  { name: 'clear', description: 'New chat (this one stays in the chat history)' },
+  { name: 'chats', description: "This project's past chats: reopen, rename, delete" },
   { name: 'stop', description: 'Stop the assistant' },
   { name: 'model', description: 'Model and effort' },
   { name: 'style', description: 'Editing style' },

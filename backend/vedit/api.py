@@ -92,6 +92,9 @@ class Session:
         # la stessa conversazione come la mostra la chat; con ``chat`` si salva
         # accanto al progetto (conversazioni.py) e torna quando lo si riapre
         self.vista: list[dict] = []
+        # id, titolo e nascita della conversazione aperta: fuori da ``chat``,
+        # che il cambio di modello svuota; servono all'archivio delle chat
+        self.meta_chat: dict = {}
         # "ferma" premuto nella chat: il turno in corso si interrompe al primo passo utile
         self.fermo = threading.Event()
         # messaggi scritti mentre l'assistente lavora: arrivano al modello col
@@ -162,26 +165,46 @@ class Session:
 # progetti recenti
 # --------------------------------------------------------------------------
 
-RECENTI_MAX = 12
+RECENTI_MAX = 12      # quelli proposti in prima schermata e nell'"apri"
+# il file li ricorda tutti (l'elenco "all projects"): prima teneva solo i 12 e
+# chi usciva dall'elenco andava ritrovato a mano sul disco
+STORIA_MAX = 2000
 
 
 def _file_recenti() -> Path:
     return proxy.cache_dir() / "recenti.json"
 
 
-def recenti() -> list[dict]:
-    """Ultimi progetti aperti o creati, dal piu' recente; quelli spariti no."""
+def _voci_recenti() -> list[dict]:
+    """Il file com'e', spariti compresi, dal piu' recente."""
     try:
-        voci = json.loads(_file_recenti().read_text(encoding="utf-8"))
+        lette = json.loads(_file_recenti().read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return []
+    if not isinstance(lette, list):
+        return []
+    return [v for v in lette if isinstance(v, dict) and v.get("path")]
+
+
+def _scrivi_recenti(voci: list[dict]) -> None:
+    try:
+        _file_recenti().write_text(json.dumps(voci[:STORIA_MAX], ensure_ascii=False, indent=1),
+                                   encoding="utf-8")
+    except OSError:
+        pass   # non poter ricordare non e' un motivo per non aprire
+
+
+def recenti() -> list[dict]:
+    """Ultimi progetti aperti o creati, dal piu' recente; quelli spariti no."""
     out = []
-    for v in voci:
-        p = Path(str(v.get("path", "")))
+    for v in _voci_recenti():
+        p = Path(str(v["path"]))
         if p.is_file():
             out.append({"path": str(p), "name": v.get("name") or p.stem,
                         "quando": v.get("quando", 0)})
-    return out[:RECENTI_MAX]
+            if len(out) == RECENTI_MAX:
+                break
+    return out
 
 
 def ricorda_recente(store: Store) -> None:
@@ -191,13 +214,45 @@ def ricorda_recente(store: Store) -> None:
 
 
 def _recenti_aggiungi(path: str, nome: str) -> None:
-    voci = [v for v in recenti() if v["path"] != path]
+    reale = os.path.realpath(path)
+    voci = [v for v in _voci_recenti() if os.path.realpath(str(v["path"])) != reale]
     voci.insert(0, {"path": path, "name": nome, "quando": time.time()})
-    try:
-        _file_recenti().write_text(json.dumps(voci[:RECENTI_MAX], ensure_ascii=False, indent=1),
-                                   encoding="utf-8")
-    except OSError:
-        pass   # non poter ricordare non e' un motivo per non aprire
+    _scrivi_recenti(voci)
+
+
+def tutti_i_progetti(cartelle: list[Path] | None = None) -> list[dict]:
+    """Ogni progetto aperto o creato, non solo gli ultimi 12, dal piu' recente.
+
+    Si aggiungono quelli che stanno nella cartella Video e nelle raccolte senza
+    essere nell'elenco (aperti prima che lo ricordasse tutti, o creati da un
+    agente): da li' restano. Quelli il cui file non c'e' piu' restano, con
+    ``esiste`` falso, finche' l'utente non li toglie.
+    """
+    voci = _voci_recenti()
+    note = raccolte.elenco()
+    if cartelle is None:
+        cartelle = [raccolte.cartella_video(), *(Path(c["path"]) for c in note)]
+    trovati = progetti.scopri(cartelle, {os.path.realpath(str(v["path"])) for v in voci})
+    if trovati:
+        voci = sorted([*voci, *trovati], key=lambda v: -float(v.get("quando") or 0))
+        _scrivi_recenti(voci)
+    nomi = {os.path.realpath(c["path"]): c["name"] for c in note}
+
+    def raccolta(p: Path) -> str | None:
+        d = os.path.realpath(p.parent)
+        for _ in range(raccolte.RISALITA):
+            if d in nomi:
+                return nomi[d]
+            d = os.path.dirname(d)
+        return None
+
+    out = []
+    for v in voci:
+        p = Path(str(v["path"]))
+        out.append({"path": str(p), "name": v.get("name") or p.stem,
+                    "quando": v.get("quando", 0), "esiste": p.is_file(),
+                    "raccolta": raccolta(p)})
+    return out
 
 
 S = Session()
@@ -447,23 +502,15 @@ class CestinoBody(BaseModel):
 
 def _recenti_cambia(vecchio: str, nuovo: str | None, nome: str | None = None) -> None:
     """Il progetto spostato resta fra i recenti col percorso nuovo; quello eliminato esce."""
-    try:   # il file com'e': recenti() salterebbe il percorso vecchio, che non c'e' piu'
-        lette = json.loads(_file_recenti().read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return
     voci = []
-    for v in lette if isinstance(lette, list) else []:
-        if not isinstance(v, dict):
-            continue
-        if Path(str(v.get("path", ""))) == Path(vecchio):
+    # il file com'e': recenti() salterebbe il percorso vecchio, che non c'e' piu'
+    for v in _voci_recenti():
+        if Path(str(v["path"])) == Path(vecchio):
             if nuovo is None:
                 continue
             v = {**v, "path": nuovo, "name": nome or v.get("name")}
         voci.append(v)
-    try:
-        _file_recenti().write_text(json.dumps(voci, ensure_ascii=False, indent=1), encoding="utf-8")
-    except OSError:
-        pass
+    _scrivi_recenti(voci)
 
 
 def _aperto_e(path: str) -> Store | None:
@@ -795,6 +842,27 @@ def raccolta_video(body: RaccoltaVideoBody) -> dict:
 @app.get("/api/recenti")
 def lista_recenti() -> list[dict]:
     return recenti()
+
+
+@app.get("/api/progetti/tutti")
+def progetti_tutti() -> dict:
+    """Tutti i progetti, non solo i 12 della prima schermata (``tutti_i_progetti``)."""
+    return {"progetti": tutti_i_progetti()}
+
+
+class DimenticaBody(BaseModel):
+    path: str
+
+
+@app.post("/api/progetti/dimentica")
+def progetti_dimentica(body: DimenticaBody) -> dict:
+    """Toglie dall'elenco un progetto il cui file non c'e' piu'. Uno che esiste si
+    elimina dal suo menu (va nel cestino): qui tornerebbe alla prossima scoperta."""
+    if Path(body.path).is_file():
+        raise HTTPException(400, "this project still exists: delete it from its menu "
+                                 "to move it to the trash")
+    _recenti_cambia(body.path, None)
+    return {"progetti": tutti_i_progetti(), "recenti": recenti()}
 
 
 @app.post("/api/op/{name}")
@@ -2576,9 +2644,14 @@ def consegna_posta(out):
 
 @app.post("/api/chat/reset")
 def chat_reset() -> dict:
-    """Ricomincia la conversazione di questo progetto (e la toglie dal disco)."""
+    """Una conversazione nuova. Quella di prima non sparisce: va nell'archivio
+    delle chat del progetto, da dove si riapre (``/api/chat/riprendi``)."""
+    from . import conversazioni
+    if S.store is not None:
+        conversazioni.archivia(S.store.path, S.chat, S.vista, S.meta_chat)
     S.chat.clear()
     S.vista = []
+    S.meta_chat = conversazioni.nuova_meta()
     salva_chat()
     return {"ok": True}
 
@@ -2589,12 +2662,80 @@ def chat_storia() -> dict:
     return {"vista": S.vista}
 
 
-def carica_chat() -> None:
+class ChatArchivioBody(BaseModel):
+    id: str
+    titolo: str | None = None
+
+
+def _archivio_chat(store: Store) -> dict:
     from . import conversazioni
-    stato, vista = conversazioni.carica(S.store.path if S.store else None)
+    attuale = conversazioni.riassunto({**S.meta_chat, "vista": S.vista})
+    return {"attuale": attuale, "chat": conversazioni.elenco(store.path)}
+
+
+@app.get("/api/chat/archivio")
+def chat_archivio() -> dict:
+    """La conversazione aperta e quelle passate del progetto, dall'ultima lasciata."""
+    return _archivio_chat(S.need())
+
+
+@app.post("/api/chat/riprendi")
+def chat_riprendi(body: ChatArchivioBody) -> dict:
+    """Riapre una conversazione passata; quella aperta va nell'archivio al suo posto."""
+    from . import conversazioni
+    store = S.need()
+    if S.in_turno:
+        raise HTTPException(409, "the assistant is still answering: stop it first")
+    if body.id not in {c["id"] for c in conversazioni.elenco(store.path)}:
+        raise HTTPException(404, "that chat is not in this project's history")
+    # prima si mette al sicuro quella aperta, poi si toglie l'altra dall'archivio:
+    # se una scrittura fallisce non si perde niente
+    conversazioni.archivia(store.path, S.chat, S.vista, S.meta_chat)
+    stato, vista, meta = conversazioni.riprendi(store.path, body.id)
     S.chat.clear()
     S.chat.update(stato)
     S.vista = vista
+    S.meta_chat = meta or conversazioni.nuova_meta()
+    salva_chat()
+    return {"vista": S.vista, **_archivio_chat(store)}
+
+
+@app.post("/api/chat/rinomina")
+def chat_rinomina(body: ChatArchivioBody) -> dict:
+    """Titolo vuoto = torna quello automatico (la prima cosa chiesta)."""
+    from . import conversazioni
+    store = S.need()
+    titolo = " ".join((body.titolo or "").split())[:120]
+    if body.id == S.meta_chat.get("id"):
+        if titolo:
+            S.meta_chat["titolo"] = titolo
+        else:
+            S.meta_chat.pop("titolo", None)
+        salva_chat()
+    elif not conversazioni.rinomina(store.path, body.id, titolo):
+        raise HTTPException(404, "that chat is not in this project's history")
+    return _archivio_chat(store)
+
+
+@app.post("/api/chat/elimina")
+def chat_elimina(body: ChatArchivioBody) -> dict:
+    """Cancella per sempre una conversazione passata (quella aperta no: prima se ne apre un'altra)."""
+    from . import conversazioni
+    store = S.need()
+    if body.id == S.meta_chat.get("id"):
+        raise HTTPException(400, "this is the open chat: start a new one first")
+    if not conversazioni.elimina(store.path, body.id):
+        raise HTTPException(404, "that chat is not in this project's history")
+    return _archivio_chat(store)
+
+
+def carica_chat() -> None:
+    from . import conversazioni
+    stato, vista, meta = conversazioni.apri(S.store.path if S.store else None)
+    S.chat.clear()
+    S.chat.update(stato)
+    S.vista = vista
+    S.meta_chat = meta or conversazioni.nuova_meta()
 
 
 def _chat_del_progetto(store: Store, in_corso: bool) -> None:
@@ -2622,8 +2763,10 @@ def salva_chat() -> None:
     from . import conversazioni
     if S.store is None:
         return
+    if not S.meta_chat.get("id"):
+        S.meta_chat = conversazioni.nuova_meta()
     try:
-        conversazioni.salva(S.store.path, S.chat, S.vista)
+        conversazioni.salva(S.store.path, S.chat, S.vista, S.meta_chat)
     except OSError:
         pass   # cartella in sola lettura: la chat resta per questa sessione
 

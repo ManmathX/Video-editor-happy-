@@ -125,7 +125,7 @@ const cartellaRicordata = (chiave) => {
  */
 export function FileBrowser({
   title, filter, multiple = true, onPick, onClose, startPath, memoria, recenti, cartella = false,
-  onPickFolder,
+  onPickFolder, onTutti,
 }) {
   const [cwd, setCwd] = useState(null)
   const [picked, setPicked] = useState([])
@@ -192,6 +192,12 @@ export function FileBrowser({
                 <span className="hint">{r.path}</span>
               </div>
             ))}
+            {onTutti && (
+              <div className="item recente" onClick={onTutti}
+                title="Every project you've opened, not just the recent ones">
+                <Icon name="cartella" /> all projects…
+              </div>
+            )}
             <div className="item hint" style={{ cursor: 'default' }}>browse</div>
           </>
         )}

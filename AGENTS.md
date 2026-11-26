@@ -429,7 +429,14 @@ stato del motore: cronologia API, sessione di Claude Code) si salvano in
 `<progetto>.chat.json` a ogni turno (`conversazioni.py`, cronologia ripulita da immagini e
 ragionamento) e tornano in `api.attach` quando cambia lo Store. Se la cronologia riparte vuota
 (altro modello, sessione persa) `chat.run(precedente=...)` passa la conversazione come testo.
-Cambiare modello o livello d'accesso non cancella piu' la chat. Modello e sforzo si cambiano
+Cambiare modello o livello d'accesso non cancella piu' la chat. Nemmeno "nuova chat"
+(`/api/chat/reset`, `/clear`): la conversazione aperta va in `<progetto>.chat-archivio.json`
+(`conversazioni.archivia`, al massimo `MAX_ARCHIVIO`) e si riapre con stato e sessione
+(`/api/chat/riprendi`; rinomina ed elimina accanto; UI `MenuStoria` in `Chat.jsx`, comando
+`/chats`). Id e titolo della chat stanno in `api.S.meta_chat`, salvati come `meta` nel
+`.chat.json`, non in `S.chat`: `chat.run` lo svuota quando cambia il motore, e senza l'id
+una chat ripresa e lasciata comparirebbe due volte. L'archivio e' un compagno del progetto
+(`progetti.COMPAGNI`). Modello e sforzo si cambiano
 dalla pastiglia in cima (`/api/llm/rapido`, `llm.imposta_rapido`): Claude Code riceve
 `--effort`, Claude via API `output_config.effort`.
 
@@ -481,6 +488,16 @@ continua a salvare li'. Eliminare = `~/.vedit/cestino/<id>/`, ripristinabile, sv
 30 giorni; il progetto aperto si chiude prima (`api.stacca`). MCP `project_manage`, API
 `/api/progetto/*`, `/api/progetti/cestino*`, `/api/project/close`; UI `Progetti.jsx`
 (`MenuProgetto`, `Cestino`). Test in `tests/test_progetti.py`.
+
+**Tutti i progetti.** `~/.vedit/recenti.json` ricorda ogni progetto aperto o creato
+(`api.STORIA_MAX`), non solo i 12 che `api.recenti()` propone in prima schermata e
+nell'"apri". `api.tutti_i_progetti` (`/api/progetti/tutti`, UI `TuttiIProgetti`) li elenca
+tutti, spariti compresi (`esiste` falso, li toglie `/api/progetti/dimentica`), e aggiunge
+quelli che `progetti.scopri` trova nella cartella Video e nelle raccolte (tre livelli, al
+massimo `SCOPERTA_MAX` voci di cartella; `progetti.leggi_progetto` scarta compagni,
+istantanee in `.versioni` e JSON che non sono progetti). Chi scrive il file passa da
+`_voci_recenti`/`_scrivi_recenti`: rileggere da `recenti()` buttava le voci oltre la dodicesima.
+Test in `tests/test_tutti_i_progetti.py`.
 
 ### Stile da un video di riferimento
 

@@ -19,6 +19,7 @@ Le modifiche al documento (nome, percorsi) passano da ``Store`` come tutte.
 from __future__ import annotations
 
 import json
+import os
 import shutil
 import time
 import uuid
@@ -27,7 +28,9 @@ from pathlib import Path
 from . import proxy, raccolte
 from .store import Store, porta_percorsi
 
-COMPAGNI = (".chat.json", ".piano.json", ".memoria.md")   # file <nome><suffisso>
+# file <nome><suffisso>; le chat passate (.chat-archivio.json) seguono il progetto
+# come quella aperta, e come lei non passano a una copia
+COMPAGNI = (".chat.json", ".chat-archivio.json", ".piano.json", ".memoria.md")
 CARTELLA_VERSIONI = ".versioni"                # cartella <nome>.versioni
 GIORNI_CESTINO = 30
 
@@ -333,3 +336,86 @@ def svuota(vid: str | None = None) -> dict:
     for d, _ in voci:
         shutil.rmtree(d, ignore_errors=True)
     return {"cancellati": len(voci)}
+
+
+# --------------------------------------------------------------------------
+# progetti sul disco che l'elenco non conosce
+# --------------------------------------------------------------------------
+
+# <cartella>/<raccolta>/<video>/<video>.json: tre livelli bastano
+SCOPERTA_PROFONDITA = 3
+# voci di cartella guardate al massimo: un disco di girato non deve bloccare l'elenco
+SCOPERTA_MAX = 5000
+_PESO_MAX = 20_000_000
+
+
+def leggi_progetto(f: Path) -> dict | None:
+    """Il documento se ``f`` e' un progetto vedit; None per compagni, raccolte e altro JSON."""
+    nome = f.name
+    if f.suffix != ".json" or nome.startswith(("~", ".")) or nome == "raccolta.json":
+        return None
+    if any(nome.endswith(s) for s in COMPAGNI):
+        return None
+    try:
+        if f.stat().st_size > _PESO_MAX:
+            return None
+        dati = json.loads(f.read_text(encoding="utf-8"))
+    except (OSError, ValueError, UnicodeDecodeError):
+        return None
+    if isinstance(dati, dict) and {"tracks", "settings", "media"} <= dati.keys():
+        return dati
+    return None
+
+
+def scopri(cartelle: list[Path], noti: set[str]) -> list[dict]:
+    """I progetti nelle cartelle che ``noti`` (percorsi reali) non ha ancora.
+
+    Serve all'elenco di tutti i progetti: quelli aperti prima che la lista li
+    ricordasse tutti, o creati da un agente senza passare dalla UI. Le istantanee
+    in ``<nome>.versioni`` sono progetti anche loro, e restano fuori.
+    """
+    trovati: list[dict] = []
+    visti = 0
+    giro: set[str] = set()
+
+    def giu(d: Path, livello: int) -> None:
+        nonlocal visti
+        reale = os.path.realpath(d)
+        if reale in giro:
+            return
+        giro.add(reale)
+        try:
+            voci = sorted(os.scandir(d), key=lambda e: e.name)
+        except OSError:
+            return
+        for e in voci:
+            visti += 1
+            if visti > SCOPERTA_MAX:
+                return
+            if e.name.startswith(".") or e.name.endswith(CARTELLA_VERSIONI):
+                continue
+            try:
+                cartella = e.is_dir(follow_symlinks=False)
+            except OSError:
+                continue
+            if cartella:
+                if livello < SCOPERTA_PROFONDITA:
+                    giu(Path(e.path), livello + 1)
+                continue
+            if not e.name.endswith(".json") or os.path.realpath(e.path) in noti:
+                continue
+            dati = leggi_progetto(Path(e.path))
+            if dati is None:
+                continue
+            noti.add(os.path.realpath(e.path))
+            try:
+                quando = e.stat().st_mtime
+            except OSError:
+                quando = 0
+            trovati.append({"path": e.path, "name": dati.get("name") or Path(e.name).stem,
+                            "quando": quando, "trovato": True})
+
+    for c in cartelle:
+        if Path(c).is_dir():
+            giu(Path(c), 1)
+    return trovati

@@ -221,6 +221,7 @@ export default function Chat({
   const comando = (nome) => {
     const fai = {
       clear: reset,
+      chats: () => setMenu('storia'),
       stop: () => api.chatStop().catch(() => {}),
       model: () => setMenu('modello'),
       style: () => setMenu('stili'),
@@ -379,10 +380,26 @@ export default function Chat({
           title="Memory: what the assistant remembers for this project and across all your projects">
           <Icon name="memoria" size={14} />
         </button>
-        <button className="icon sm" onClick={reset} title="Start the conversation over">
-          <Icon name="cestino" size={14} />
+        <button className={`icon sm ${menu === 'storia' ? 'on' : ''}`}
+          onClick={() => setMenu(menu === 'storia' ? null : 'storia')}
+          title="Chat history: this project's past chats">
+          <Icon name="orologio" size={14} />
+        </button>
+        <button className="icon sm" onClick={reset} title="New chat (this one stays in the chat history)">
+          <Icon name="nuovo" size={14} />
         </button>
       </div>
+
+      {menu === 'storia' && (
+        <MenuStoria busy={busy} setError={setError} onChiudi={() => setMenu(null)}
+          onNuova={() => { reset(); setMenu(null) }}
+          onRiprendi={(vista) => {
+            setTurns(vista)
+            setCoda([])
+            setInviati([])
+            setMenu(null)
+          }} />
+      )}
 
       {menu === 'modello' && (
         <MenuModello available={available} setError={setError}
@@ -919,6 +936,103 @@ const LIVELLI = [
  * decide le opzioni con cui parte; con i modelli via API vedit collega i server
  * MCP locali e passa le skill (estensioni.py).
  */
+/** Quando e' stata lasciata una chat: oggi l'ora, prima il giorno. */
+function quandoChat(t) {
+  if (!t) return ''
+  const d = new Date(t * 1000)
+  const oggi = new Date()
+  if (d.toDateString() === oggi.toDateString()) {
+    return `today ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+  }
+  const ieri = new Date(oggi)
+  ieri.setDate(oggi.getDate() - 1)
+  if (d.toDateString() === ieri.toDateString()) return 'yesterday'
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short',
+    year: d.getFullYear() === oggi.getFullYear() ? undefined : 'numeric' })
+}
+
+/**
+ * Le chat passate del progetto (conversazioni.py, archivio): una chat nuova non
+ * cancella quella di prima, la mette qui. Riaprirne una rimette al suo posto
+ * quella aperta; rinominare con un titolo vuoto torna alla prima domanda.
+ */
+function MenuStoria({ busy, setError, onChiudi, onNuova, onRiprendi }) {
+  const [dati, setDati] = useState(null)
+  const [nome, setNome] = useState(null)          // { id, titolo } mentre si rinomina
+  const [daCancellare, setDaCancellare] = useState(null)
+
+  useEffect(() => {
+    api.chatArchivio().then(setDati).catch((e) => setError(e.message))
+  }, [setError])
+
+  const fai = async (promessa) => {
+    try { setDati(await promessa) } catch (e) { setError(e.message) }
+  }
+  const salvaNome = () => {
+    if (!nome) return
+    const { id, titolo } = nome
+    setNome(null)
+    fai(api.chatRinomina(id, titolo))
+  }
+  const riprendi = async (id) => {
+    try { onRiprendi((await api.chatRiprendi(id)).vista || []) } catch (e) { setError(e.message) }
+  }
+
+  if (!dati) return <div className="stilimenu"><div className="hint">loading…</div></div>
+
+  const riga = (c, aperta) => (
+    <div key={c.id} className="stilemio storiachat">
+      {nome?.id === c.id ? (
+        <input autoFocus value={nome.titolo} placeholder={c.titolo} aria-label="chat name"
+          onChange={(e) => setNome({ ...nome, titolo: e.target.value })}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') salvaNome()
+            if (e.key === 'Escape') setNome(null)
+          }}
+          onBlur={salvaNome} />
+      ) : (
+        <button className={`stilevoce ${aperta ? 'on' : ''}`} disabled={!aperta && busy}
+          title={aperta ? 'The chat open now' : busy ? 'Wait for the assistant to finish' : 'Continue this chat'}
+          onClick={() => (aperta ? onChiudi() : riprendi(c.id))}>
+          <b>{c.titolo}</b>
+          <span>
+            {aperta ? 'open now' : quandoChat(c.aggiornata || c.creata)}
+            {' · '}{c.turni} {c.turni === 1 ? 'message' : 'messages'}
+          </span>
+        </button>
+      )}
+      <button className="icon sm" title="Rename"
+        onClick={() => setNome({ id: c.id, titolo: c.rinominata ? c.titolo : '' })}>
+        <Icon name="testo" size={14} />
+      </button>
+      {!aperta && (daCancellare === c.id ? (
+        <button className="ghost danger sm" title="Delete this chat for good"
+          onClick={() => { setDaCancellare(null); fai(api.chatElimina(c.id)) }}>delete</button>
+      ) : (
+        <button className="icon sm" title="Delete this chat" onClick={() => setDaCancellare(c.id)}>
+          <Icon name="cestino" size={14} />
+        </button>
+      ))}
+    </div>
+  )
+
+  return (
+    <div className="stilimenu">
+      <div className="hint">
+        Every chat of this project is kept here, with the model's memory of it: open one to
+        continue where you left off.
+      </div>
+      <button className="stilevoce" onClick={onNuova}>
+        <b>New chat</b><span>the one open now stays in this list</span>
+      </button>
+      {dati.attuale?.turni > 0 && riga(dati.attuale, true)}
+      {dati.chat.length === 0
+        ? <div className="hint">No past chats yet.</div>
+        : dati.chat.map((c) => riga(c, false))}
+    </div>
+  )
+}
+
 function Accesso({ claudeCode, setError }) {
   const [st, setSt] = useState(null)
   const [collegando, setCollegando] = useState(false)

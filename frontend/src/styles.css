@@ -1060,6 +1060,10 @@ button.comando.on { background: var(--accent-soft); border-color: rgba(255,138,9
 .stiligruppo { padding: 6px 2px 0; }
 .stilemio { display: flex; gap: 4px; align-items: center; }
 .stilemio .stilevoce { flex: 1; min-width: 0; }
+/* chat passate: titoli lunghi su una riga, il nome si scrive al posto della voce */
+.storiachat .stilevoce b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.storiachat input { flex: 1; min-width: 0; height: 44px; }
+.storiachat button.danger { color: var(--danger); border-color: var(--danger); flex: none; }
 .stilenuovo { justify-content: flex-start; color: var(--grape); flex: none; }
 .editorstile { display: flex; flex-direction: column; gap: 8px; }
 .editorstile label { display: flex; flex-direction: column; gap: 4px; font-size: 11px; color: var(--dim); }
@@ -1447,6 +1451,11 @@ button.link:hover { color: var(--text); background: none; }
 .cestino-voce:hover { background: var(--panel-2); }
 .cestino-voce .nome { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .cestino-voce .hint { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* tutti i progetti: la riga intera apre, quelli spariti restano grigi */
+.tutti-progetti { max-height: 60vh; }
+.tutti-progetti .apri-progetto { flex: 1; min-width: 0; justify-content: flex-start; gap: 8px; }
+.tutti-progetti .apri-progetto .hint { text-align: right; }
+.tutti-progetti .mancante .nome { color: var(--dim); text-decoration: line-through; }
 
 /* ---- la raccolta come posto di lavoro (SpazioRaccolta in Raccolte.jsx) ---- */
 .spazio {

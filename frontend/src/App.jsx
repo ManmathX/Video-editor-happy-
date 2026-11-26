@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { api, connectEvents } from './api.js'
 import Chat from './Chat.jsx'
 import { NuovaRaccolta, RaccolteHome, SpazioRaccolta } from './Raccolte.jsx'
-import { Cestino, MenuProgetto } from './Progetti.jsx'
+import { Cestino, MenuProgetto, TuttiIProgetti } from './Progetti.jsx'
 import { Confirm, CopiaErrore, FileBrowser, NewProject, ProjectFormat, RenderDialog } from './Dialogs.jsx'
 import Voce from './Voce.jsx'
 import Generazione from './Generazione.jsx'
@@ -69,7 +69,9 @@ export default function App() {
   // col puntatore sopra l'avviso non sparisce: si fa in tempo a leggerlo e copiarlo
   const [erroreFermo, setErroreFermo] = useState(false)
   const [busy, setBusy] = useState(null)
-  const [dialog, setDialog] = useState(null)     // 'new' | 'open' | 'import' | 'render' | 'particelle' | 'formato' | 'voce' | 'genera' | 'pubblica'
+  const [dialog, setDialog] = useState(null)     // 'new' | 'open' | 'import' | 'render' | 'particelle' | 'formato' | 'voce' | 'genera' | 'pubblica' | 'tutti'
+  // cresce a ogni rinomina/spostamento/eliminazione: l'elenco di tutti i progetti si ricarica
+  const [giroProgetti, setGiroProgetti] = useState(0)
   const [job, setJob] = useState(null)
   const [nuovi, setNuovi] = useState(0)          // progetti creati in questa sessione
   const [source, setSource] = useState(null)     // media aperto nel monitor
@@ -788,7 +790,7 @@ Its memory and reference images reach the assistant in every video`}
       {/* la prima schermata copre l'editor vuoto: dentro il monitor la timeline la tagliava a meta' */}
       {sys && !project && (
         <Benvenuto recenti={sys.recenti} onNew={() => setDialog('new')}
-          onOpen={() => setDialog('open')} onRecent={openProject}
+          onOpen={() => setDialog('open')} onRecent={openProject} onTutti={() => setDialog('tutti')}
           raccolte={sys.raccolte} onRaccolta={setRaccoltaAperta} onNuovaRaccolta={() => setDialog('nuova-raccolta')}
           onCestino={() => setDialog('cestino')}
           menu={(r) => (
@@ -811,6 +813,15 @@ Its memory and reference images reach the assistant in every video`}
       )}
       {dialog === 'cestino' && (
         <Cestino setError={setError} flash={flash} onClose={() => setDialog(null)} onFatto={progettiCambiati} />
+      )}
+      {dialog === 'tutti' && (
+        <TuttiIProgetti setError={setError} giro={giroProgetti} onClose={() => setDialog(null)}
+          onApri={(p) => { setDialog(null); openProject(p) }}
+          menu={(r) => (
+            <MenuProgetto path={r.path} name={r.name} raccolte={sys?.raccolte} setError={setError}
+              flash={flash} onApri={() => { setDialog(null); openProject(r.path) }}
+              onFatto={(...a) => { progettiCambiati(...a); setGiroProgetti((n) => n + 1) }} />
+          )} />
       )}
       {dialog === 'pubblica' && project && (
         <Pubblica file={job?.state === 'done' ? job.output : ''} nome={project.name}
@@ -836,7 +847,7 @@ Its memory and reference images reach the assistant in every video`}
       )}
       {dialog === 'open' && (
         <FileBrowser title="Open project" multiple={false} onClose={() => setDialog(null)}
-          memoria="progetti" recenti={sys?.recenti}
+          memoria="progetti" recenti={sys?.recenti} onTutti={() => setDialog('tutti')}
           filter={(n) => n.toLowerCase().endsWith('.json')}
           onPick={([p]) => openProject(p)} />
       )}
@@ -884,7 +895,7 @@ Its memory and reference images reach the assistant in every video`}
  * spenti e nessuna indicazione su da dove partire. Qui ci sono le due cose che
  * si possono fare, e i progetti aperti di recente a un clic.
  */
-function Benvenuto({ recenti, onNew, onOpen, onRecent, raccolte, onRaccolta, onNuovaRaccolta, onCestino, menu }) {
+function Benvenuto({ recenti, onNew, onOpen, onRecent, onTutti, raccolte, onRaccolta, onNuovaRaccolta, onCestino, menu }) {
   return (
     <div className="benvenuto">
       <div className="benvenuto-box">
@@ -900,6 +911,8 @@ function Benvenuto({ recenti, onNew, onOpen, onRecent, raccolte, onRaccolta, onN
         <div className="benvenuto-azioni">
           <button className="primary" onClick={onNew}><Icon name="nuovo" />new project</button>
           <button onClick={onOpen}><Icon name="apri" />open…</button>
+          <button onClick={onTutti} title="Every project you've opened, and the ones in your Videos folder">
+            <Icon name="cartella" />all projects</button>
         </div>
         {recenti?.length > 0 && (
           <div className="benvenuto-recenti">
